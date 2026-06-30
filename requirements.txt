@@ -1,0 +1,6 @@
+# Python 3.10+ 우주론 분석 파이프라인 의존성 목록
+# 3.10 미만 불가: X | Y 유니온 타입 어노테이션(PEP 604)을 common_io.py, Halo_Shape.py 등에서 사용
+numpy>=1.20.0        # 공통 수치 계산 및 Catalog binary 파싱 (common_io.py 등)
+scipy>=1.7.0         # 2pCF cKDTree(PBC 지원), Halo shape 통계 및 MST 필라멘트 csgraph (pair_counts.py, Halo_Shape.py, Spatial_Slices_Projection.py)
+matplotlib>=3.4.0    # HMF, Shape, Spatial slice 시각화 플롯팅 (run_pipeline.py 및 하위 Plot 모듈)
+colossus>=1.3.0      # HMF_Plot.py 에서 Tinker08, Watson13 이론 질량 함수 곡선 및 cosmology 설정 지원 (선택적/권장)
