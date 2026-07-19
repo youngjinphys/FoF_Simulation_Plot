@@ -72,11 +72,8 @@ def read_catalog_path(file_path: str):
 
 class CatalogData:
     """
-    Read-only adapter that gives the Fortran catalog columns explicit names.
-
-    The adapter preserves backward-compatible numpy-style slicing: existing
-    code using data[:, 0] or data[mask, 34:43] continues to receive numpy
-    arrays, while data[mask] returns another CatalogData view.
+    Read-only adapter that gives the catalog columns used by this visualizer
+    explicit names while preserving NumPy-style slicing.
     """
 
     def __init__(self, raw_data: np.ndarray):
@@ -121,76 +118,24 @@ class CatalogData:
         return self.raw[:, 1:4]
 
     @property
-    def pos_lagrangian(self):
-        """Lagrangian halo COM centers in catalog grid coordinates, columns 7:10."""
-        return self.raw[:, 7:10]
-
-    @property
     def xx_flat(self):
         """
-        Eulerian COM-centered second-moment tensor, SUMMED over member
-        particles, in box-normalized coordinates (position/box length,
-        dimensionless).
-
-        Verified against the binary data: trace(xx) carries one additional
-        factor of particle count relative to qq, so the particle-averaged
-        variance used for RMS axis conversion is xx / Np.
-
-        Absolute-size conversion: an eigenvalue lambda of this matrix maps to
-        a principal RMS length of L_box * sqrt(lambda / Np) in Mpc/h.
+        Eulerian COM-centered second-moment tensor, summed over member
+        particles, in box-normalized coordinates.
         """
         return self.raw[:, 34:43]
 
     @property
     def qq_flat(self):
         """
-        Lagrangian COM-centered second-moment tensor, AVERAGED over member
-        particles, in box-normalized coordinates (position/box length,
-        dimensionless).
-
-        Verified against the binary data: the scalar normalization differs from
-        xx by a factor of Np. The qq tensor is interpreted here only as the
-        catalog's Lagrangian second-order statistic in q coordinates; it is not
-        relabeled as a measured boundary or volume.
-
-        Absolute-size conversion: an eigenvalue lambda of this matrix maps to
-        a principal RMS length of L_box * sqrt(lambda) in Mpc/h (no Np factor).
+        Lagrangian COM-centered particle-averaged second-moment tensor in
+        box-normalized coordinates.
         """
         return self.raw[:, 43:52]
 
-    @property
-    def vec_qq(self):
-        """
-        qq eigenvectors paired by column with catalog columns 70:73.
-
-        The flat catalog block stores each vector contiguously; swapping the
-        reshaped row/vector axis exposes the NumPy ``eigh`` column convention.
-        """
-        return np.swapaxes(self.raw[:, 73:82].reshape(-1, 3, 3), 1, 2)
-
-    @property
-    def vec_tide(self):
-        """Tidal eigenvectors paired by column with catalog columns 82:85."""
-        return np.swapaxes(self.raw[:, 85:94].reshape(-1, 3, 3), 1, 2)
-
-    @property
-    def lambda_tide_catalog(self):
-        """
-        Catalog tidal eigenvalues in columns 82:85.
-
-        The repository diagnostics document these as the physical eigenvalues
-        paired with ``vec_tide``; callers that need the named schema should use
-        this accessor instead of repeating a raw slice.
-        """
-        return self.raw[:, 82:85]
-
-UNIFORM_ELLIPSOID_BOUNDARY_FACTOR = np.sqrt(5.0)
-
 
 def read_catalog_data(fi: int, config: GlobalConfig, custom_path: str = None):
-    """
-    공통 I/O: 파일을 읽고 파싱하여 열 의미가 명시된 read-only adapter를 반환.
-    """
+    """Read one configured or explicitly supplied catalog into CatalogData."""
     if custom_path and os.path.isfile(custom_path):
         file_path = custom_path
     else:
